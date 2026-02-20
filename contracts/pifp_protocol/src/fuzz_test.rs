@@ -4,10 +4,7 @@ extern crate std;
 use std::vec::Vec;
 
 use proptest::prelude::*;
-use soroban_sdk::{
-    testutils::Address as _,
-    token, Address, BytesN, Env,
-};
+use soroban_sdk::{testutils::Address as _, token, Address, BytesN, Env};
 
 use crate::invariants::*;
 use crate::types::ProjectStatus;

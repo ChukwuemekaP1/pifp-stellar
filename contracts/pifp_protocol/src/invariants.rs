@@ -61,11 +61,9 @@ pub fn assert_deposit_invariant(balance_before: i128, balance_after: i128, amoun
 pub fn assert_sequential_ids(projects: &[Project]) {
     for (i, project) in projects.iter().enumerate() {
         assert_eq!(
-            project.id,
-            i as u64,
+            project.id, i as u64,
             "INV-6 violated: expected id {}, got {}",
-            i,
-            project.id
+            i, project.id
         );
     }
 }

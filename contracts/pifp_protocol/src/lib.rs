@@ -9,11 +9,11 @@ mod storage;
 mod types;
 
 #[cfg(test)]
-mod test;
+mod fuzz_test;
 #[cfg(test)]
 mod invariants;
 #[cfg(test)]
-mod fuzz_test;
+mod test;
 
 use storage::{get_and_increment_project_id, get_oracle, load_project, save_project, set_oracle};
 pub use types::{Project, ProjectStatus};

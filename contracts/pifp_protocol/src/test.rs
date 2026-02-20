@@ -104,7 +104,8 @@ fn test_get_project_success() {
     let proof_hash = BytesN::from_array(&env, &[5u8; 32]);
     let deadline: u64 = env.ledger().timestamp() + 86_400;
 
-    let registered = client.register_project(&creator, &token.address, &999, &proof_hash, &deadline);
+    let registered =
+        client.register_project(&creator, &token.address, &999, &proof_hash, &deadline);
     let retrieved = client.get_project(&registered.id);
 
     assert_eq!(registered, retrieved);
@@ -239,7 +240,7 @@ fn test_deposit_success() {
     let token_admin = Address::generate(&env);
     let mock_token_client = create_token_contract(&env, &token_admin);
     let token = mock_token_client.address.clone();
-    
+
     let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
     let goal: i128 = 1_000;
     let deadline: u64 = env.ledger().timestamp() + 86_400;
@@ -247,11 +248,11 @@ fn test_deposit_success() {
     let project = client.register_project(&creator, &token, &goal, &proof_hash, &deadline);
 
     let donator = Address::generate(&env);
-    
+
     // Mint tokens to donator
     let token_admin_client = token::StellarAssetClient::new(&env, &token);
     token_admin_client.mint(&donator, &500);
-    
+
     // Verify starting balance
     assert_eq!(mock_token_client.balance(&donator), 500);
 
@@ -285,7 +286,7 @@ fn test_deposit_insufficient_balance() {
     let token_admin = Address::generate(&env);
     let mock_token_client = create_token_contract(&env, &token_admin);
     let token = mock_token_client.address.clone();
-    
+
     let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
     let goal: i128 = 1_000;
     let deadline: u64 = env.ledger().timestamp() + 86_400;
