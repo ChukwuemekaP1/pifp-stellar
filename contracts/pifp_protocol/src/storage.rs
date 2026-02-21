@@ -73,8 +73,12 @@ fn bump_instance(env: &Env) {
         .extend_ttl(INSTANCE_LIFETIME_THRESHOLD, INSTANCE_BUMP_AMOUNT);
 }
 
-/// Atomically reads, increments, and stores the project counter.
-/// Returns the ID to use for the *current* project (pre-increment value).
+// ─────────────────────────────────────────────────────────
+// Project counter
+// ─────────────────────────────────────────────────────────
+
+/// Atomically read and increment the project counter.
+/// Returns the ID that should be used for the next project.
 pub fn get_and_increment_project_id(env: &Env) -> u64 {
     bump_instance(env);
     let current: u64 = env
@@ -186,4 +190,36 @@ pub fn save_project_state(env: &Env, id: u64, state: &ProjectState) {
     let key = DataKey::ProjState(id);
     env.storage().persistent().set(&key, state);
     bump_persistent(env, &key);
+}
+
+/// Add `amount` to the existing balance of `token` for `project_id`.
+/// Returns the new balance.
+pub fn add_to_token_balance(env: &Env, project_id: u64, token: &Address, amount: i128) -> i128 {
+    let current = get_token_balance(env, project_id, token);
+    let new_balance = current + amount;
+    set_token_balance(env, project_id, token, new_balance);
+    new_balance
+}
+
+/// Zero out the balance of `token` for `project_id` and return what it was.
+/// Called during `verify_and_release` after transferring funds to the creator.
+pub fn drain_token_balance(env: &Env, project_id: u64, token: &Address) -> i128 {
+    let balance = get_token_balance(env, project_id, token);
+    if balance > 0 {
+        set_token_balance(env, project_id, token, 0);
+    }
+    balance
+}
+
+/// Build a `ProjectBalances` snapshot by reading each accepted token's balance.
+pub fn get_all_balances(env: &Env, project: &Project) -> ProjectBalances {
+    let mut balances: Vec<TokenBalance> = Vec::new(env);
+    for token in project.accepted_tokens.iter() {
+        let balance = get_token_balance(env, project.id, &token);
+        balances.push_back(TokenBalance { token, balance });
+    }
+    ProjectBalances {
+        project_id: project.id,
+        balances,
+    }
 }

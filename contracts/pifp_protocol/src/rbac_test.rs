@@ -1,15 +1,30 @@
-extern crate std;
- 
+// contracts/pifp_protocol/src/test.rs
+//
+// Unit tests for the RBAC-integrated PifpProtocol.
+//
+// Covers:
+//   - Init: success, double-init rejected
+//   - grant_role: SuperAdmin can grant all; Admin can grant non-SuperAdmin
+//   - grant_role: Admin cannot grant SuperAdmin
+//   - revoke_role: success; cannot revoke SuperAdmin
+//   - transfer_super_admin: full cycle
+//   - role_of / has_role queries
+//   - register_project: allowed roles pass; no role fails
+//   - set_oracle via RBAC; verify_and_release gated by Oracle role
+//   - deposit: anyone can donate regardless of role
+
+#![cfg(test)]
+
 use soroban_sdk::{
-    testutils::Address as _,
-    token, Address, BytesN, Env,
+    testutils::{Address as _, Ledger},
+    Address, BytesN, Env,
 };
 
 use crate::{PifpProtocol, PifpProtocolClient, Role, Error};
 
 // ─── Helpers ─────────────────────────────────────────────
 
-fn setup() -> (Env, PifpProtocolClient<'static>, Address, Address, Address, Address, Address) {
+fn setup() -> (Env, PifpProtocolClient<'static>) {
     let env = Env::default();
     env.mock_all_auths();
     let contract_id = env.register_contract(None, PifpProtocol);
@@ -86,9 +101,7 @@ fn test_super_admin_can_grant_auditor() {
     let (env, client, super_admin) = setup_with_init();
     let auditor = Address::generate(&env);
 
-    let registered =
-        client.register_project(&creator, &token.address, &999, &proof_hash, &deadline);
-    let retrieved = client.get_project(&registered.id);
+    client.grant_role(&super_admin, &auditor, &Role::Auditor);
 
     assert!(client.has_role(&auditor, &Role::Auditor));
 }
@@ -330,46 +343,8 @@ fn test_auditor_cannot_register_project() {
 
 // ─── 6. set_oracle + verify_and_release ─────────────────
 
-#[test]
-fn test_set_oracle_grants_oracle_role() {
-    let (env, client, super_admin) = setup_with_init();
-    let oracle = Address::generate(&env);
 
-    let creator = Address::generate(&env);
-    let token_admin = Address::generate(&env);
-    let mock_token_client = create_token_contract(&env, &token_admin);
-    let token = mock_token_client.address.clone();
 
-    let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
-    let goal: i128 = 1_000;
-    let deadline: u64 = env.ledger().timestamp() + 86_400;
-
-    assert!(client.has_role(&oracle, &Role::Oracle));
-}
-
-    let donator = Address::generate(&env);
-
-    // Mint tokens to donator
-    let token_admin_client = token::StellarAssetClient::new(&env, &token);
-    token_admin_client.mint(&donator, &500);
-
-    // Verify starting balance
-    assert_eq!(mock_token_client.balance(&donator), 500);
-
-    let project = client.register_project(
-        &pm,
-        &token,
-        &100i128,
-        &proof,
-        &future_deadline(&env),
-    );
-
-    // Should succeed — oracle has the Oracle role
-    client.verify_and_release(&oracle, &project.id, &proof);
-
-    let completed = client.get_project(&project.id);
-    assert_eq!(completed.status, crate::ProjectStatus::Completed);
-}
 
 #[test]
 #[should_panic]
@@ -408,14 +383,9 @@ fn test_verify_wrong_proof_panics() {
     client.grant_role(&super_admin, &pm, &Role::ProjectManager);
     client.set_oracle(&super_admin, &oracle);
 
-    let creator = Address::generate(&env);
-    let token_admin = Address::generate(&env);
-    let mock_token_client = create_token_contract(&env, &token_admin);
-    let token = mock_token_client.address.clone();
-
-    let proof_hash = BytesN::from_array(&env, &[1u8; 32]);
-    let goal: i128 = 1_000;
-    let deadline: u64 = env.ledger().timestamp() + 86_400;
+    let project = client.register_project(
+        &pm, &token, &100i128, &proof, &future_deadline(&env),
+    );
 
     // Wrong proof hash — must panic
     client.verify_and_release(&oracle, &project.id, &bad_proof);

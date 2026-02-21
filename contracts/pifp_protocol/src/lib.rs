@@ -151,7 +151,7 @@ impl PifpProtocol {
     pub fn register_project(
         env: Env,
         creator: Address,
-        token: Address,
+        accepted_tokens: Vec<Address>,
         goal: i128,
         proof_hash: BytesN<32>,
         deadline: u64,
@@ -160,10 +160,15 @@ impl PifpProtocol {
         // RBAC gate: only authorised roles may create projects.
         rbac::require_can_register(&env, &creator);
 
+        if accepted_tokens.len() == 0 {
+            panic_with_error!(&env, Error::InvalidMilestones);
+        }
+        if accepted_tokens.len() > 10 {
+            panic_with_error!(&env, Error::TooManyTokens);
+        }
         if goal <= 0 {
             panic_with_error!(&env, Error::InvalidMilestones);
         }
-
         if deadline <= env.ledger().timestamp() {
             panic_with_error!(&env, Error::InvalidMilestones);
         }
@@ -175,10 +180,10 @@ impl PifpProtocol {
             creator: creator.clone(),
             token: token.clone(),
             goal,
-            balance: 0,
             proof_hash,
             deadline,
             status: ProjectStatus::Funding,
+            donation_count: 0,
         };
 
         save_project(&env, &project);
