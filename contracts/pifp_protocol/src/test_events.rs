@@ -2,10 +2,10 @@ extern crate std;
 
 use soroban_sdk::{
     testutils::{Address as _, Events},
-    token, vec, Address, BytesN, Env, Symbol, symbol_short, TryIntoVal, IntoVal,
+    token, vec, Address, BytesN, Env, symbol_short, TryIntoVal, IntoVal,
 };
 
-use crate::{PifpProtocol, PifpProtocolClient, Role, ProjectStatus};
+use crate::{PifpProtocol, PifpProtocolClient, Role};
 use crate::events::{ProjectCreated, ProjectFunded, ProjectVerified};
 
 fn setup() -> (Env, PifpProtocolClient<'static>) {

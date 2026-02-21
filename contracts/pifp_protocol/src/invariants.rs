@@ -1,4 +1,6 @@
 
+#![allow(dead_code)]
+
 extern crate std;
 
 use crate::types::{Project, ProjectStatus};

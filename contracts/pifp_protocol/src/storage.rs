@@ -56,8 +56,6 @@ const PERSISTENT_LIFETIME_THRESHOLD: u32 = 7 * DAY_IN_LEDGERS;
 pub enum DataKey {
     /// Global auto-increment counter for project IDs (Instance).
     ProjectCount,
-    /// Trusted oracle/verifier address (Instance).
-    OracleKey,
     /// Immutable project configuration keyed by ID (Persistent).
     ProjConfig(u64),
     /// Mutable project state keyed by ID (Persistent).
@@ -92,24 +90,6 @@ pub fn get_and_increment_project_id(env: &Env) -> u64 {
         .instance()
         .set(&DataKey::ProjectCount, &(current + 1));
     current
-}
-
-/// Store the trusted oracle address in instance storage.
-pub fn set_oracle(env: &Env, oracle: &Address) {
-    env.storage()
-        .instance()
-        .set(&DataKey::OracleKey, oracle);
-    bump_instance(env);
-}
-
-/// Retrieve the trusted oracle address.
-/// Panics if no oracle has been set.
-pub fn get_oracle(env: &Env) -> Address {
-    bump_instance(env);
-    env.storage()
-        .instance()
-        .get(&DataKey::OracleKey)
-        .expect("oracle not set")
 }
 
 // ── Persistent Storage Helpers ───────────────────────────────────────
@@ -224,6 +204,7 @@ pub fn add_to_token_balance(env: &Env, project_id: u64, token: &Address, amount:
 
 /// Zero out the balance of `token` for `project_id` and return what it was.
 /// Called during `verify_and_release` after transferring funds to the creator.
+#[allow(dead_code)]
 pub fn drain_token_balance(env: &Env, project_id: u64, token: &Address) -> i128 {
     let balance = get_token_balance(env, project_id, token);
     if balance > 0 {
@@ -233,6 +214,7 @@ pub fn drain_token_balance(env: &Env, project_id: u64, token: &Address) -> i128 
 }
 
 /// Build a `ProjectBalances` snapshot by reading each accepted token's balance.
+#[allow(dead_code)]
 pub fn get_all_balances(env: &Env, project: &Project) -> ProjectBalances {
     let mut balances: Vec<TokenBalance> = Vec::new(env);
     for token in project.accepted_tokens.iter() {
