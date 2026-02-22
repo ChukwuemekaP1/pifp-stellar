@@ -61,3 +61,11 @@ pub fn emit_project_verified(env: &Env, project_id: u64, oracle: Address, proof_
     };
     env.events().publish(topics, data);
 }
+
+pub fn emit_protocol_paused(env: &Env, admin: Address) {
+    env.events().publish((symbol_short!("paused"), admin), ());
+}
+
+pub fn emit_protocol_unpaused(env: &Env, admin: Address) {
+    env.events().publish((symbol_short!("unpaused"), admin), ());
+}
