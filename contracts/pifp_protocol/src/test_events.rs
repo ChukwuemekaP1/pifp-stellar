@@ -1,10 +1,6 @@
 extern crate std;
 
-use soroban_sdk::{
-    symbol_short,
-    testutils::Events,
-    vec, IntoVal, TryIntoVal,
-};
+use soroban_sdk::{symbol_short, testutils::Events, vec, IntoVal, TryIntoVal};
 
 use crate::events::{ProjectCreated, ProjectFunded, ProjectVerified};
 use crate::test_utils::TestContext;
@@ -43,12 +39,13 @@ fn test_project_created_event() {
 fn test_project_funded_event() {
     let ctx = TestContext::new();
     let (project, token, sac) = ctx.setup_project(10000);
-    
+
     let donator = ctx.generate_address();
     let amount = 1000i128;
     sac.mint(&donator, &amount);
 
-    ctx.client.deposit(&project.id, &donator, &token.address, &amount);
+    ctx.client
+        .deposit(&project.id, &donator, &token.address, &amount);
 
     let all_events = ctx.env.events().all();
     let last_event = all_events.last().expect("No events found");
@@ -80,7 +77,8 @@ fn test_project_verified_event() {
     let (project, _, _) = ctx.setup_project(1000);
     let proof = ctx.dummy_proof();
 
-    ctx.client.verify_and_release(&ctx.oracle, &project.id, &proof);
+    ctx.client
+        .verify_and_release(&ctx.oracle, &project.id, &proof);
 
     let all_events = ctx.env.events().all();
     let last_event = all_events.last().expect("No events found");
@@ -121,7 +119,7 @@ fn test_get_project_balances() {
         &tokens,
         &10_000,
         &ctx.dummy_proof(),
-        &(ctx.env.ledger().timestamp() + 86400)
+        &(ctx.env.ledger().timestamp() + 86400),
     );
 
     let donator = ctx.generate_address();
@@ -131,8 +129,10 @@ fn test_get_project_balances() {
     sac_a.mint(&donator, &amount_a);
     sac_b.mint(&donator, &amount_b);
 
-    ctx.client.deposit(&project.id, &donator, &token_a.address, &amount_a);
-    ctx.client.deposit(&project.id, &donator, &token_b.address, &amount_b);
+    ctx.client
+        .deposit(&project.id, &donator, &token_a.address, &amount_a);
+    ctx.client
+        .deposit(&project.id, &donator, &token_b.address, &amount_b);
 
     // Query balances
     let balances = ctx.client.get_project_balances(&project.id);
@@ -153,19 +153,21 @@ fn test_get_project_balances() {
 fn test_funds_released_to_creator() {
     let ctx = TestContext::new();
     let (project, token, sac) = ctx.setup_project(5000);
-    
+
     let donator = ctx.generate_address();
     let deposit_amount = 1000i128;
     sac.mint(&donator, &deposit_amount);
 
-    ctx.client.deposit(&project.id, &donator, &token.address, &deposit_amount);
+    ctx.client
+        .deposit(&project.id, &donator, &token.address, &deposit_amount);
 
     // Verify and release
-    ctx.client.verify_and_release(&ctx.oracle, &project.id, &ctx.dummy_proof());
+    ctx.client
+        .verify_and_release(&ctx.oracle, &project.id, &ctx.dummy_proof());
 
     // Check creator (manager) received the funds
     assert_eq!(token.balance(&ctx.manager), deposit_amount);
-    
+
     // Check contract no longer has the funds
     assert_eq!(token.balance(&ctx.client.address), 0);
 }

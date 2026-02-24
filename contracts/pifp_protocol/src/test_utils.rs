@@ -5,7 +5,7 @@ use soroban_sdk::{
     token, Address, BytesN, Env, Vec,
 };
 
-use crate::{PifpProtocol, PifpProtocolClient, ProjectStatus, Role, types::Project};
+use crate::{types::Project, PifpProtocol, PifpProtocolClient, Role};
 
 pub struct TestContext {
     pub env: Env,
@@ -53,14 +53,23 @@ impl TestContext {
     }
 
     pub fn create_token(&self) -> (token::Client<'static>, token::StellarAssetClient<'static>) {
-        let addr = self.env.register_stellar_asset_contract_v2(self.admin.clone());
+        let addr = self
+            .env
+            .register_stellar_asset_contract_v2(self.admin.clone());
         (
             token::Client::new(&self.env, &addr.address()),
             token::StellarAssetClient::new(&self.env, &addr.address()),
         )
     }
 
-    pub fn setup_project(&self, goal: i128) -> (Project, token::Client<'static>, token::StellarAssetClient<'static>) {
+    pub fn setup_project(
+        &self,
+        goal: i128,
+    ) -> (
+        Project,
+        token::Client<'static>,
+        token::StellarAssetClient<'static>,
+    ) {
         let (token, sac) = self.create_token();
         let tokens = Vec::from_array(&self.env, [token.address.clone()]);
         let project = self.register_project(&tokens, goal);
@@ -70,7 +79,8 @@ impl TestContext {
     pub fn register_project(&self, tokens: &Vec<Address>, goal: i128) -> Project {
         let proof_hash = self.dummy_proof();
         let deadline = self.env.ledger().timestamp() + 86400;
-        self.client.register_project(&self.manager, tokens, &goal, &proof_hash, &deadline)
+        self.client
+            .register_project(&self.manager, tokens, &goal, &proof_hash, &deadline)
     }
 
     pub fn dummy_proof(&self) -> BytesN<32> {

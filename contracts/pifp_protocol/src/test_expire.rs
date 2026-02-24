@@ -37,9 +37,9 @@ fn test_expire_wrong_status_panics() {
     // Expire properly first
     ctx.jump_time(project.deadline + 1);
     ctx.client.expire_project(&project.id);
-    
+
     // Attempt to expire again (Expired status is wrong status for expire_project)
-    ctx.client.expire_project(&project.id); 
+    ctx.client.expire_project(&project.id);
 }
 
 #[test]
@@ -49,7 +49,8 @@ fn test_expire_completed_project_panics() {
     let (project, _, _) = ctx.setup_project(1000);
 
     // Move to Completed
-    ctx.client.verify_and_release(&ctx.oracle, &project.id, &ctx.dummy_proof());
+    ctx.client
+        .verify_and_release(&ctx.oracle, &project.id, &ctx.dummy_proof());
 
     // Attempt to expire
     ctx.jump_time(project.deadline + 1);
@@ -63,7 +64,8 @@ fn test_expire_active_project_success() {
 
     // Deposit to make it Active
     sac.mint(&ctx.admin, &1000);
-    ctx.client.deposit(&project.id, &ctx.admin, &token.address, &1000);
+    ctx.client
+        .deposit(&project.id, &ctx.admin, &token.address, &1000);
 
     let active_project = ctx.client.get_project(&project.id);
     assert_eq!(active_project.status, ProjectStatus::Active);

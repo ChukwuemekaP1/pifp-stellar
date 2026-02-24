@@ -1,7 +1,7 @@
 extern crate std;
 
-use soroban_sdk::{Address, Vec};
 use crate::{test_utils::TestContext, ProjectStatus, Role};
+use soroban_sdk::Vec;
 
 #[test]
 fn test_init_sets_super_admin() {
@@ -23,7 +23,7 @@ fn test_register_project_success() {
     let token = ctx.generate_address();
     let tokens = Vec::from_array(&ctx.env, [token.clone()]);
     let goal: i128 = 1_000;
-    
+
     let project = ctx.register_project(&tokens, goal);
 
     assert_eq!(project.id, 0);
@@ -56,10 +56,10 @@ fn test_register_zero_goal_fails() {
 fn test_register_past_deadline_fails() {
     let ctx = TestContext::new();
     let tokens = Vec::from_array(&ctx.env, [ctx.generate_address()]);
-    
+
     // Set ledger to future
     ctx.jump_time(200_000);
-    
+
     // Attempt to register with a past deadline (86400 from 100_000 < 200_000)
     let past_deadline = 150_000;
     ctx.client.register_project(
@@ -67,7 +67,7 @@ fn test_register_past_deadline_fails() {
         &tokens,
         &1000,
         &ctx.dummy_proof(),
-        &past_deadline
+        &past_deadline,
     );
 }
 
@@ -76,7 +76,8 @@ fn test_register_past_deadline_fails() {
 fn test_deposit_zero_amount_fails() {
     let ctx = TestContext::new();
     let (project, token, _) = ctx.setup_project(1000);
-    ctx.client.deposit(&project.id, &ctx.manager, &token.address, &0i128);
+    ctx.client
+        .deposit(&project.id, &ctx.manager, &token.address, &0i128);
 }
 
 #[test]
@@ -88,7 +89,8 @@ fn test_deposit_after_deadline_fails() {
     // Fast-forward time
     ctx.jump_time(project.deadline + 1);
 
-    ctx.client.deposit(&project.id, &ctx.admin, &token.address, &100i128);
+    ctx.client
+        .deposit(&project.id, &ctx.admin, &token.address, &100i128);
 }
 
 #[test]
@@ -121,7 +123,7 @@ fn test_project_exists_and_maybe_load_helpers() {
         assert!(crate::storage::project_exists(&ctx.env, project.id));
         let cfg = crate::storage::maybe_load_project_config(&ctx.env, project.id).unwrap();
         assert_eq!(cfg.id, project.id);
-        
+
         let st = crate::storage::maybe_load_project_state(&ctx.env, project.id).unwrap();
         assert_eq!(st.donation_count, 0);
 
@@ -155,7 +157,8 @@ fn test_deposit_fails_when_paused() {
     let (project, token, _) = ctx.setup_project(1000);
 
     ctx.client.pause(&ctx.admin);
-    ctx.client.deposit(&project.id, &ctx.manager, &token.address, &100i128);
+    ctx.client
+        .deposit(&project.id, &ctx.manager, &token.address, &100i128);
 }
 
 #[test]
