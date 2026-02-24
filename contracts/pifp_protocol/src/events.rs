@@ -19,6 +19,12 @@ pub struct ProjectFunded {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProjectActive {
+    pub project_id: u64,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ProjectVerified {
     pub project_id: u64,
     pub oracle: Address,
@@ -64,6 +70,12 @@ pub fn emit_project_funded(env: &Env, project_id: u64, donator: Address, amount:
         donator,
         amount,
     };
+    env.events().publish(topics, data);
+}
+
+pub fn emit_project_active(env: &Env, project_id: u64) {
+    let topics = (symbol_short!("active"), project_id);
+    let data = ProjectActive { project_id };
     env.events().publish(topics, data);
 }
 

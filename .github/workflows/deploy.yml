@@ -31,7 +31,7 @@ jobs:
         run: |
           wget https://github.com/stellar/stellar-cli/releases/download/v25.1.0/stellar-cli-25.1.0-x86_64-unknown-linux-gnu.tar.gz
           tar -xzf stellar-cli-25.1.0-x86_64-unknown-linux-gnu.tar.gz
-          sudo mv stellar-cli-25.1.0-x86_64-unknown-linux-gnu/stellar /usr/local/bin/
+          sudo mv stellar /usr/local/bin/
 
       - name: Build Smart Contract
         # Compiles the contract to the wasm32 target
@@ -42,6 +42,9 @@ jobs:
         env:
           SOROBAN_SECRET_KEY: ${{ secrets.SOROBAN_SECRET_KEY }}
         run: |
+          # 0. Configure network
+          stellar network add --rpc-url https://rpc-futurenet.stellar.org:443 --network-passphrase "Test SDF Future Network ; October 2022" futurenet
+
           # 1. Deploy the contract and capture the output ID
           # The pipeline will automatically fail here if the deployment crashes 
           # (e.g., insufficient funds or bad secret) due to standard bash 'set -e' behavior.
@@ -84,7 +87,7 @@ jobs:
         run: |
           wget https://github.com/stellar/stellar-cli/releases/download/v25.1.0/stellar-cli-25.1.0-x86_64-unknown-linux-gnu.tar.gz
           tar -xzf stellar-cli-25.1.0-x86_64-unknown-linux-gnu.tar.gz
-          sudo mv stellar-cli-25.1.0-x86_64-unknown-linux-gnu/stellar /usr/local/bin/
+          sudo mv stellar /usr/local/bin/
 
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -96,6 +99,9 @@ jobs:
 
       - name: Generate TypeScript Bindings
         run: |
+          # 0. Configure network
+          stellar network add --rpc-url https://rpc-futurenet.stellar.org:443 --network-passphrase "Test SDF Future Network ; October 2022" futurenet
+
           CONTRACT_ID=$(jq -r '.contract_id' deployments.json)
           stellar contract bindings typescript \
             --wasm target/wasm32-unknown-unknown/release/pifp_protocol.wasm \

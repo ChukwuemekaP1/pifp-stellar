@@ -80,6 +80,8 @@ pub enum Error {
     Overflow = 18,
     ProtocolPaused = 19,
     GoalMismatch = 20,
+    ProjectNotExpired = 21,
+    InvalidTransition = 22,
 }
 
 #[contract]
@@ -318,7 +320,18 @@ impl PifpProtocol {
         token_client.transfer(&donator, &env.current_contract_address(), &amount);
 
         // Update the per-token balance.
-        storage::add_to_token_balance(&env, project_id, &token, amount);
+        let new_balance = storage::add_to_token_balance(&env, project_id, &token, amount);
+
+        // If this is the primary token and goal is reached, transition from Funding to Active.
+        if state.status == ProjectStatus::Funding {
+            if let Some(first_token) = config.accepted_tokens.get(0) {
+                if token == first_token && new_balance >= config.goal {
+                    state.status = ProjectStatus::Active;
+                    save_project_state(&env, project_id, &state);
+                    events::emit_project_active(&env, project_id);
+                }
+            }
+        }
 
         // Standardized event emission
         events::emit_project_funded(&env, project_id, donator, amount);
@@ -406,14 +419,16 @@ impl PifpProtocol {
     pub fn expire_project(env: Env, project_id: u64) {
         let (config, mut state) = load_project_pair(&env, project_id);
 
-        // State transition check: only Funding projects can expire.
-        if state.status != ProjectStatus::Funding {
-            panic!("invalid transition: only funding projects can expire");
+        // State transition check: only Funding or Active projects can expire.
+        // Completed projects cannot be expired.
+        match state.status {
+            ProjectStatus::Funding | ProjectStatus::Active => {}
+            _ => panic_with_error!(&env, Error::InvalidTransition),
         }
 
         // Deadline check.
         if env.ledger().timestamp() < config.deadline {
-            panic!("project has not expired yet");
+            panic_with_error!(&env, Error::ProjectNotExpired);
         }
 
         // Update status and save.
