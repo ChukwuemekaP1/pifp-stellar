@@ -44,15 +44,21 @@ jobs:
         env:
           SOROBAN_SECRET_KEY: ${{ secrets.SOROBAN_SECRET_KEY }}
         run: |
+          if [ -z "$SOROBAN_SECRET_KEY" ]; then
+            echo "ERROR: SOROBAN_SECRET_KEY is not set. Please add it to your GitHub Symbols/Secrets."
+            exit 1
+          fi
+
           # 0. Configure network
           stellar network add --rpc-url https://rpc-futurenet.stellar.org:443 --network-passphrase "Test SDF Future Network ; October 2022" futurenet
 
+          # 0b. Configure identity
+          echo "$SOROBAN_SECRET_KEY" | stellar keys add deployer --force
+
           # 1. Deploy the contract and capture the output ID
-          # The pipeline will automatically fail here if the deployment crashes 
-          # (e.g., insufficient funds or bad secret) due to standard bash 'set -e' behavior.
           CONTRACT_ID=$(stellar contract deploy \
             --wasm target/wasm32v1-none/release/pifp_protocol.wasm \
-            --source "$SOROBAN_SECRET_KEY" \
+            --source deployer \
             --network futurenet)
           
           echo "Successfully deployed to Futurenet! Contract ID: $CONTRACT_ID"
