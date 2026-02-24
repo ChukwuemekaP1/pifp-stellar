@@ -171,3 +171,32 @@ fn test_funds_released_to_creator() {
     // Check contract no longer has the funds
     assert_eq!(token.balance(&ctx.client.address), 0);
 }
+
+#[test]
+fn test_refunded_event() {
+    let ctx = TestContext::new();
+    let (project, token, sac) = ctx.setup_project(1000);
+    let donator = ctx.generate_address();
+
+    sac.mint(&donator, &400i128);
+    ctx.client
+        .deposit(&project.id, &donator, &token.address, &400i128);
+
+    ctx.jump_time(86_401);
+    ctx.client.refund(&donator, &project.id, &token.address);
+
+    let all_events = ctx.env.events().all();
+    let last_event = all_events.last().expect("No events found");
+
+    assert_eq!(last_event.0, ctx.client.address);
+    let expected_topics = vec![
+        &ctx.env,
+        symbol_short!("refunded").into_val(&ctx.env),
+        project.id.into_val(&ctx.env),
+    ];
+    assert_eq!(last_event.1, expected_topics);
+
+    let event_data: (soroban_sdk::Address, i128) = last_event.2.try_into_val(&ctx.env).unwrap();
+    assert_eq!(event_data.0, donator);
+    assert_eq!(event_data.1, 400i128);
+}
